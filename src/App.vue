@@ -9,7 +9,9 @@
     
     
     <div v-if="store.state.user.role=='admin'" id="menuadmin">
-      <router-link to="/s-enregistrer">ADMIN</router-link>
+      
+      <router-link to="/creer-quiz">Creer quiz</router-link>
+
       
       <div @click="logout" id="logout">X</div>
     </div>

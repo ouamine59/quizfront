@@ -1,17 +1,17 @@
 
-    <template>
+<template>
   <div>
     <input v-model="form.username" placeholder="username" />
-    <div v-if="validations.username.$error" class="error">gjgjjh
+    <div v-if="validations.username.$error" class="error">
       <span v-if="!validations.username.required">Username is required.</span>
       <span v-if="!validations.username.minLength">Username must be at least 3 characters long.</span>
       <span v-if="!validations.username.regex">Username must start with at least 3 alphabetic characters.</span>
     </div>
 
     <input type="password" v-model="form.password" placeholder="password" />
-    <span v-if="validations.password.$error"></span>
+    <span v-if="validations.password.$error" class="error">ujtj</span>
 
-    <button @click.prevent="login">Valider</button>
+    <button @click="login">Valider</button>
   </div>
 </template>
 
@@ -21,11 +21,11 @@ import { reactive} from 'vue';
 import {useStore} from 'vuex'
 import {useRouter} from 'vue-router'
 import { useVuelidate } from '@vuelidate/core'
-import { required, minLength, email , helpers} from '@vuelidate/validators'
+import { required, minLength,  helpers} from '@vuelidate/validators'
 
 const form = reactive({
-  username: '',
-  password: ''
+  username: 'admin',
+  password: '1234'
 })
 // Custom regex validator
 const regex = helpers.withMessage(

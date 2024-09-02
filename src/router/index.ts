@@ -3,6 +3,8 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from "../views/RegisterView.vue"
 import TableauDeBordAdminView from '../views/TableauDeBordAdminView.vue'
+import CreateQuestionAdminView from '../views/CreateQuestionAdminView.vue'
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
@@ -31,6 +33,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/tableau-de-bord',
     name: 'tableau',
     component: TableauDeBordAdminView
+  },
+  {
+    path: '/creer-quiz',
+    name: 'createquiz',
+    component: CreateQuestionAdminView
   },
 ]
 
