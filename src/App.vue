@@ -10,9 +10,9 @@
     
     <div v-if="store.state.user.role=='admin'" id="menuadmin">
       
-      <router-link to="/creer-quiz">Creer quiz</router-link>
+      <router-link to="/creer-question">Creer question</router-link>
 
-      
+      <router-link to="/creer-quiz">Creer QUIZ</router-link>
       <div @click="logout" id="logout">X</div>
     </div>
   </nav>
