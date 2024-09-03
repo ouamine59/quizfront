@@ -46,9 +46,13 @@
             responses: form.responses.map(r => r.text),
             correctAnswers: checkedValues
         };
-        //appel a API pour creation question
         try {
-            const response = await fetch('http://localhost:8889/api/quiz/create-question', {
+        //appel a API pour creation question
+         if(checkedValues.length == 0){
+             throw new Error(`pas de reponse: ${response.status}`);
+         }
+        
+            const response = await fetch('http://localhost:8889/api/questions/create-question', {
                 method: 'POST',
                 body: JSON.stringify(questionData),
                 headers: {
@@ -61,7 +65,7 @@
             }
             const result = await response.json();   
         } catch (err) {
-            console.error('Error during login:', err);
+            console.error('Error dur:', err);
         }
     };
     </script>
