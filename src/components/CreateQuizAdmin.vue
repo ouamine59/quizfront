@@ -1,146 +1,160 @@
  <template>
     <div id='recherche'>
         <div>
-            <label for='titre'>Titre
+             <label for='titre'>Titre
                 <input id='titre' v-model='form.titre' />         
-            </label>
-           <Question 
-            @recupQuestion="recupQuestion($event)" />     
+            </label> 
+            <Question 
+            :nQuestion ="nQuestion"
+            @set-question="setQuestionValue"
+            :qvalue="changeValueQuestion"
+            />      
         </div>
+        <h2>Les réponses <button @click="addForm">+</button></h2>
+            
          <Responses 
-        :nResponses="form.nResponses" 
-        @addResponse="addResponse" 
-        @recupValue="recupResponse( $event)"
-        @recupCheckbox="recupCheckbox($event)"/>
-
+            v-for="(response, index) in form.nResponses"
+            :index="index" 
+            @set-response="setResponse"
+            @set-answer="goodResponses"
+            :rvalue="updateResponses"
+        />
+        <!-- Answer = reponse donc tu changeras-->
+        <button @click="previous">Précedent</button>
         <button @click="create">Créer</button>
         <button @click="addQuestion">Nouvelle question</button>
     </div>
 </template>
 
-<script setup>
+<script setup  lang="ts">
 import { reactive, ref } from 'vue';
 import { required, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
+import { useRouter } from 'vue-router';
 import Question from './Question.vue';
 import Responses from './Responses.vue';
-const questionsArray = ref([]);
+import   {Quiz} from '../type/config'
+const updateResponses = ref<string[]>([])
+const router = useRouter()
+const nQuestion = ref(1)
+const changeValueQuestion = ref("")
 const form = reactive({
-    titre: '',
-    question:[],
-    responses: [],
-    correctAnswers: [],
-    nResponses : [{ text: '' }]
+    titre:"",
+    nResponses : []
 });
-const recupQuestion = ($event)=>{
-    if($event!=''){
-        form.question.push ($event)
+let quizz : Quiz = {
+    titre: "",
+    questions: []
+};
+let currentQuestion = {
+    text: "",
+    responses: [""],
+    answer: [""]
+} 
+const previous = ()=>{
+    //modification  nombre de question
+    form.nResponses = []
+    if(nQuestion.value > 1){
+        --nQuestion.value
+        //affichage de la question
+        const val = quizz.questions[nQuestion.value-1].question
+        changeValueQuestion.value = val
+        quizz.questions[nQuestion.value-1].reponse.forEach((res, index) => {
+            form.nResponses.push({ text: '' }); 
+            updateResponses.value[index] = res; // Remplit les réponses dans le tableau
+        });
     }
+    console.log(quizz)
 }
-const recupCheckbox = ($event)=>{
-    if($event!=''){
-        form.correctAnswers.push ($event)
-    }
+const goodResponses = (value: string, index : number)=>{
+    currentQuestion.answer[index] = value;
 }
-const recupResponse =( $event) =>{
-    if($event!=''){
-        form.responses.push (   $event)
-    }
+const setResponse = (value: string, index: number) => {
+    currentQuestion.responses[index] = value[index];
 }
 
 
 
-
-
-
-
-
-const addResponse = () => {
+const addForm = () => {
     form.nResponses.push({ text: '' });
 };
+let createTitle = 0
+const setQuestionValue = (value: string) => {
+     currentQuestion.text = value;
+ }
+
 const addQuestion = () => {
-    if(questionsArray.value.title==0){
-        questionsArray.value.push({title:form.title}) 
-    }
-    questionsArray.value.push({
-        question: form.question,
-        responses: form.responses,
-        correctAnswers: form.correctAnswers,
-    });
-    console.log(questionsArray)
-    // Reset form after adding the question
-    form.question = "";
-    form.nResponses = [{ text: '' }];
-    form.response = [];
-    form.correctAnswers = [];
-
-
+    const valueIndex = nQuestion.value- 1 ;
+    form.nResponses=  []
+    let a = nQuestion.value-1
+    console.log(quizz.questions.length +'=='+ a)
+     if(quizz.questions.length == nQuestion.value-1|| quizz.questions.length== 0){
+        console.log('zzz')
+        nQuestion.value++;
+        changeValueQuestion.value = " "
+        updateResponses.value = []
+     }else{
+        nQuestion.value++;
+        quizz.questions[valueIndex+1].reponse.forEach((res, index) => {
+            updateResponses.value[index] = res; // Remplit les réponses dans le tableau
+            form.nResponses.push({ text: '' }); 
+        });
+     }
+        
+        // Si la question n'existe pas, on l'initialise
+        if (!quizz.questions[valueIndex]) {
+            quizz.questions[valueIndex] = {
+                question: '',
+                reponse: [],
+                checkbox: []
+            };
+        }
+        console.log("test : "+currentQuestion.responses)
+        quizz.questions[valueIndex].question = currentQuestion.text;
+        quizz.questions[valueIndex].reponse  =  currentQuestion.responses//currentQuestion.responses;
+        quizz.questions[valueIndex].checkbox =  currentQuestion.answer //currentQuestion.answer;
+        console.log(quizz)
+        
+        // //remise a zero du formulaire
+        // form.nResponses=  [] 
+        currentQuestion = {
+            text: "",
+            responses: [""],
+            answer: [""]
+        } 
+    
 };
 const create = async () => {
-    questionsArray.value.push({
-        title: form.titre,
-        question: form.question,
-        responses: form.responses,
-        correctAnswers: form.correctAnswers,
-    });
-        try {
+    quizz.titre= form.titre 
+    quizz.questions.push( {
+         'question': currentQuestion.text, 
+         'reponse' :currentQuestion.responses,
+         'checkbox' : currentQuestion.answer
+     })
+console.log(quizz)
+    try {
         const response = await fetch('http://localhost:8889/api/quiz/create', {
             method: 'POST',
-            body: JSON.stringify({ tab: questionsArray.value }),
+            body: JSON.stringify(quizz),
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json',
             },
         });
-
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
-        console.log(result);
-
-        // Clear form and questions array after successful creation
-        questionsArray.value = [];
-        form = [];
-
+        // //remise a zero du formulaire
+        form.nResponses=  [{ text: '' }]
+        //updateResponses.value.setEmptyInput()
+       // emptyQuestion.value.emptyQuestion()
+        router.push("/tableau-de-bord")
     } catch (err) {
-        console.error('Error during API call:', err);
+         console.error('Error during API call:', err);
     }
+    
 }
-// const create = async () => {
-//     // validations.value.$touch();
-
-//     // if (validations.value.$invalid) {
-//     //     console.error('Form has validation errors');
-//     //     return;
-//     // }
-
-//     try {
-//         const response = await fetch('http://localhost:8889/api/quiz/create', {
-//             method: 'POST',
-//             body: JSON.stringify({ tab: questionsArray.value }),
-//             headers: {
-//                 'Accept': 'application/json, text/plain, */*',
-//                 'Content-Type': 'application/json',
-//             },
-//         });
-
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-
-//         const result = await response.json();
-//         console.log(result);
-
-//         // Clear form and questions array after successful creation
-//         questionsArray.value = [];
-//         form = [];
-
-//     } catch (err) {
-//         console.error('Error during API call:', err);
-//     }
-// };
 
 </script>
 
@@ -168,145 +182,3 @@ const create = async () => {
     border: 1px solid black;
 }
 </style> 
-
-<!-- <template>
-    <div id='recherche'>
-        <div>
-            <label for='titre'>Titre
-                <input id='titre' v-model='form.titre'/>         
-            </label>
-            <Question :responses="form.question" />      
-        </div>
-        <Responses 
-        :responses="form.responses" 
-        @addResponse="addResponse" 
-        @recupValue="recup(value, $event)"
-        v-model="parentValues" 
-        ref="childComp"/>
-        <button @click="create">Créer</button>
-        <button @click="addQuestion">Nouvelle question</button>
-    </div>
-</template>
-
-<script setup>
-const recup =(value, $event) =>{
-    alert($event)
-}
-import { reactive, ref } from 'vue';
-import { required, minLength } from '@vuelidate/validators';
-import { useVuelidate } from '@vuelidate/core';
-import Question from './Question.vue';
-import Responses from './Responses.vue';
-
-const parentValues = ref(['Item 1', 'Item 2', 'Item 3']);
-const childComp = ref(null);
-
-const form = reactive({
-    titre: '',
-    question: [],
-    responses: [{ text: '' }],
-    correctAnswers: [],
-});
-
-// const rules = {
-//     question: { required, minLength: minLength(3) },
-//     titre: { required, minLength: minLength(3) }
-// };
-
-//const validations = useVuelidate(rules, form);
-
-const questionsArray = ref([]);
-
-const addResponse = () => {
-    form.responses.push({ text: '' });
-};
-
-const addQuestion = () => {
-    // validations.value.$touch();
-
-    // if (validations.value.$invalid) {
-    //     console.error('Form has validation errors');
-    //     return;
-    // }
-
-    if (questionsArray.value.length === 0) {
-        questionsArray.value.push({ title: form.titre });
-        questionsArray.value.push({ nombre: 2 });
-    }
-
-    questionsArray.value.push({
-        question: form.question,
-        responses: form.responses.map(r => r.text),
-        correctAnswers: form.correctAnswers,
-    });
-
-    // Reset form after adding the question
-    form.question = "";
-    form.responses = [{ text: '' }];
-    form.correctAnswers = [];
-    form.titre = "";
-};
-
-const create = async () => {
-    // validations.value.$touch();
-
-    // if (validations.value.$invalid) {
-    //     console.error('Form has validation errors');
-    //     return;
-    // }
-
-    try {
-        const response = await fetch('http://localhost:8889/api/quiz/create', {
-            method: 'POST',
-            body: JSON.stringify({ tab: questionsArray.value }),
-            headers: {
-                'Accept': 'application/json, text/plain, */*',
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(result);
-
-        // Clear form and questions array after successful creation
-        questionsArray.value = [];
-        form.question = "";
-        form.titre = "";
-        form.responses = [{ text: '' }];
-        form.correctAnswers = [];
-
-    } catch (err) {
-        console.error('Error during API call:', err);
-    }
-};
-
-</script>
-
-<style lang="scss">
-#recherche {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-}
-
-#containerResearch {
-    border: 1px solid black;
-    padding: 30px;
-    border-radius: 10px;
-}
-
-#containerResult {
-    display: flex;
-    border: 1px solid black;
-    flex-wrap: wrap;
-}
-
-.resultQuestion {
-    width: 300px;
-    border: 1px solid black;
-}
-</style> -->

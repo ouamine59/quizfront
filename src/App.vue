@@ -10,7 +10,7 @@
     
     <div v-if="store.state.user.role=='admin'" id="menuadmin">
       
-      <router-link to="/creer-question">Creer question</router-link>
+      <router-link to="/liste-quiz">liste quiz</router-link>
 
       <router-link to="/creer-quiz">Creer QUIZ</router-link>
       <div @click="logout" id="logout">X</div>
@@ -18,10 +18,12 @@
   </nav>
   <router-view/>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import {useStore} from 'vuex';
 import { useRouter } from 'vue-router';
+
+
 const store = useStore();
 const local = localStorage.getItem('token')
 const router = useRouter();

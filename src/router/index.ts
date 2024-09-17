@@ -5,7 +5,8 @@ import RegisterView from "../views/RegisterView.vue"
 import TableauDeBordAdminView from '../views/TableauDeBordAdminView.vue'
 import CreateQuestionAdminView from '../views/CreateQuestionAdminView.vue'
 import CreateQuizAdminView from '../views/CreateQuizAdminView.vue'
-
+import ListingQuizView from '@/views/ListingQuizView.vue'
+import UpdateQuizView from '@/views/UpdateQuizView.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
@@ -44,6 +45,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/creer-quiz',
     name: 'createquiz',
     component: CreateQuizAdminView
+  },
+  {
+    path: '/liste-quiz',
+    name: 'listequiz',
+    component: ListingQuizView
+  },
+  {
+    path: '/modifier-quiz/:id',
+    name: 'updatequiz',
+    component: UpdateQuizView
   },
 ]
 
