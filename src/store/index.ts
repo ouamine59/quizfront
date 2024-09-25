@@ -10,14 +10,13 @@ export default createStore({
       connected: false
     },
   },
-  getters: {
-    // getToken(state){
-    //   return state.token  ;
-    // },
-    // getUser(state){
-    //   return state.user
-    // }
-  },
+
+    getters: {
+      user: (state) => state.user,
+      token: (state) => state.token,
+      isLoggedIn: (state) => !!state.token, // Si le token existe, l'utilisateur est connecté
+      isAdmin: (state) => state.user.role === 'admin'
+    },
   mutations: {
     setToken(state, token){
       state.token= token ;

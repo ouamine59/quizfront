@@ -18,4 +18,16 @@ const index = ref("")
 </script>
 
 <style>
+tbody{
+    width:80%;
+    display:flex;
+    justify-content:space-between;
+    margin-left:auto;
+    margin-right: auto;
+}
+tr{
+    display:flex;
+    justify-content:space-between;
+ 
+}
 </style>

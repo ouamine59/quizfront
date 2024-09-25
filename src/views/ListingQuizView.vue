@@ -44,42 +44,10 @@
   })
   </script>
   <style lang="scss">
-  #app {
-    font-family: Avenir, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-align: center;
-    color: #2c3e50;
-  }
-  
-  nav {
-    padding: 30px;
-  
-    a {
-      font-weight: bold;
-      color: #2c3e50;
-  
-      &.router-link-exact-active {
-        color: #42b983;
-      }
-    }
-  }
-  nav, #menuadmin, #menuuser{
-    display:flex;
-    justify-content: space-around;
-  }
-  #logout{
-    background-color: red;
-    color:white;
-    width:20px;
-    height:
-    20px;
-    display:flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-  }
-  #logout:hover{
-    cursor:pointer;
+  table{
+    width:80%;
+    border:1px solid black ;
+    margin-left:auto;
+    margin-right: auto;
   }
   </style>

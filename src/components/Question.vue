@@ -1,6 +1,6 @@
 <template lang="">
     <div>
-        <h2>Question n° {{props.nQuestion}}</h2>
+        <p>Question n° {{props.nQuestion}}</p>
         <input v-model="question" @input="setQuestionValue" placeholder="question"/>
     </div>
 </template>
