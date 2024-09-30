@@ -1,4 +1,4 @@
- <template>
+ <!-- <template>
     <div id='recherche'>
         <div id="containerTitreQuestion">
             <div>
@@ -29,6 +29,48 @@
        </div>
         
     </div>
+</template> -->
+<template>
+    <div id="recherche">
+        <div id="containerTitreQuestion">
+            <div>
+                <p>Titre</p>
+                <input 
+                    id="titre" 
+                    v-model="formData.titre" 
+                    :class="{ 'is-invalid': v$.titre.$invalid && v$.titre.$dirty }"
+                />
+                <div v-if="v$.titre.$invalid && v$.titre.$dirty">
+                    <p v-if="!v$.titre.required">Le titre est requis</p>
+                    <p v-if="!v$.titre.minLength">Le titre doit contenir au moins 5 caractères</p>
+                </div>
+            </div>
+            <Question 
+                :nQuestion="numberQuestion"
+                @set-question="setQuestionValue"
+                :qvalue="changeValueQuestion"
+            />      
+        </div>
+        
+        <h2>Les réponses <button @click="addForm">+</button></h2>
+
+        <Responses 
+            v-for="(response, index) in form.nResponses"
+            :key="index"
+            :index="index" 
+            @set-response="setResponse"
+            @set-good-response="goodResponses"
+            :rvalue="updateResponses"
+            :isChecked="boolCheckbox[index]"
+            ref="mychild"
+        />
+
+        <div id="containerBTN">
+            <button @click="previous">Précedent</button>
+            <button @click="create">Créer</button>
+            <button @click="addQuestion">{{ (numberQuestion <= quizz.questions.length - 1) ? 'Question suivante' : 'Nouvelle question' }}</button>
+        </div>
+    </div>
 </template>
 
 <script setup  lang="ts">
@@ -45,6 +87,17 @@ const updateResponses = ref<string[]>([])
 const router = useRouter()
 const numberQuestion = ref(1)
 const changeValueQuestion = ref("")
+const formData = reactive({
+    titre: '',
+    reponse: '',
+});
+
+const rules = {
+    titre: { required, minLength: minLength(5) },
+    reponse: { required },
+};
+
+const v$ = useVuelidate(rules, formData);
 
 const form = reactive({
     titre:"",
@@ -124,96 +177,174 @@ const fieldBlank = ()=>{
     changeValueQuestion.value = " "
     updateResponses.value = [] 
 }
-
-const addQuestion = () => {  
-    const valueIndex = numberQuestion.value- 1 ;
-    form.nResponses=  []
+const addQuestion = async () => {
     
-    if(quizz.questions.length-1 ){
-        fieldBlank()
+    v$.value.$touch(); // Marque tous les champs comme "touchés"
+    const isValid = await v$.value.$validate();
+    if (!isValid) {
+        console.log('Form invalid, cannot add question');
+        return; // Si le formulaire est invalide, ne pas ajouter la question
     }
-    if(start ===0 ){
-        fieldBlank()
-        start = 1
+
+    const valueIndex = numberQuestion.value - 1;
+    form.nResponses = [];
+
+    // Réinitialise si nécessaire
+    if (start === 0) {
+        fieldBlank();
+        start = 1;
     }
-     if(quizz.questions.length == numberQuestion.value-1|| quizz.questions.length== 0){
+
+    // Si on est à la dernière question ou à la première question
+    if (quizz.questions.length === numberQuestion.value - 1 || quizz.questions.length === 0) {
         numberQuestion.value++;
-        if(start ===0 ){
-            fieldBlank()
-            start = 1
-        }  
-       
-     }else{
+    } else {
         numberQuestion.value++;
-        if(valueIndex+1 < quizz.questions.length ){
-            //changement du titre 
-            changeValueQuestion.value = (valueIndex+1 < quizz.questions.length )?quizz.questions[valueIndex+1].question :""
-            //affichage des input response
-            quizz.questions[valueIndex+1].reponse.forEach((res, index) => {
-                updateResponses.value[index] = res; 
-                form.nResponses.push({ text: '' }); 
+        if (valueIndex + 1 < quizz.questions.length) {
+            // Mise à jour de la question suivante
+            changeValueQuestion.value = quizz.questions[valueIndex + 1].question || "";
+            quizz.questions[valueIndex + 1].reponse.forEach((res, index) => {
+                updateResponses.value[index] = res;
+                form.nResponses.push({ text: '' });
             });
-        } 
-     }
-    if (!quizz.questions) {
-        quizz.questions = [];
+        }
     }
-        // Si la question n'existe pas, on l'initialise
+
+    // Si la question n'existe pas, on l'initialise
     if (!quizz.questions[valueIndex]) {
         quizz.questions.push({
-            'question': currentQuestion.text,
-            'reponse' : toRaw(currentQuestion.responses),
-            'checkbox' : toRaw(currentQuestion.answer)
-        })
-        
-    }else{
-       if( quizz.questions[valueIndex].question != currentQuestion.text && currentQuestion.text != ""){
-            quizz.questions[valueIndex].question  =  currentQuestion.text
-        }
-        //changement du titre 
-        changeValueQuestion.value = (valueIndex+1 < quizz.questions.length )?quizz.questions[valueIndex+1].question :""
-        const currentCheckbox = (valueIndex+1 < quizz.questions.length )?valueIndex+1 :quizz.questions.length-1 ;
-        const currentQuestionData = quizz.questions[currentCheckbox];
-        //ajout des reponse quand  la question existe deja
-        if(quizz.questions[valueIndex].reponse.length != form.nResponses.length){
-            for(let i = 0; i<currentQuestion.responses.length;i++){
-                if(currentQuestion.responses[i]!="" && currentQuestion.responses[i]!= undefined){
-                    quizz.questions[valueIndex].reponse.push(currentQuestion.responses[i])
-                }
-            }
-        }
-     
-        //affichage des checkbox selectionné
-        quizz.questions[currentCheckbox].reponse.forEach((res, index1) => {
-            boolCheckbox.value[index1] = currentQuestionData.checkbox.includes(res);
+            question: currentQuestion.text,
+            reponse: toRaw(currentQuestion.responses),
+            checkbox: toRaw(currentQuestion.answer),
         });
-        for(let i =0; i <quizz.questions[valueIndex].reponse.length; i ++){
-             if(currentQuestion.responses[i]!=undefined ){
-                if( quizz.questions[valueIndex].reponse[i]!=  currentQuestion.responses[i] && currentQuestion.responses[i] !=""){
-                   quizz.questions[valueIndex].reponse[i]   =  currentQuestion.responses[i]
-                }
+    } else {
+        // Mise à jour de la question existante
+        if (quizz.questions[valueIndex].question !== currentQuestion.text && currentQuestion.text !== "") {
+            quizz.questions[valueIndex].question = currentQuestion.text;
+        }
+
+        // Vérifie et met à jour les réponses et les checkbox
+        for (let i = 0; i < currentQuestion.responses.length; i++) {
+            if (currentQuestion.responses[i] && quizz.questions[valueIndex].reponse[i] !== currentQuestion.responses[i]) {
+                quizz.questions[valueIndex].reponse[i] = currentQuestion.responses[i];
             }
         }
-        for(let i =0; i <quizz.questions[valueIndex].checkbox.length; i ++){
-            if(currentQuestion.answer[i]!=undefined){
-                if( quizz.questions[valueIndex].checkbox[i] != currentQuestion.answer[i]  && currentQuestion.answer[i]  !=""){
-                    quizz.questions[valueIndex].checkbox[i]  =  currentQuestion.answer[i]
-                }
+
+        for (let i = 0; i < currentQuestion.answer.length; i++) {
+            if (currentQuestion.answer[i] && quizz.questions[valueIndex].checkbox[i] !== currentQuestion.answer[i]) {
+                quizz.questions[valueIndex].checkbox[i] = currentQuestion.answer[i];
             }
         }
-        
-        
     }
-    checkCheckbox(valueIndex)
-    //remise a zero du formulaire
-    currentQuestion = {
-        text: "",
-        responses: [""],
-        answer: []
-    } 
-    
+
+    checkCheckbox(valueIndex);
+
+    // Réinitialise le formulaire pour la prochaine question
+    currentQuestion.text = "";
+    currentQuestion.responses = [""];
+    currentQuestion.answer = [];
 };
+
+// const addQuestion = async () => { 
+//     v$.value.$touch(); 
+//     const isValid = await v$.value.$validate();
+//     if (!isValid) {
+//         console.log('Form invalid, cannot add question');
+//         return;
+//     }
+//     const valueIndex = numberQuestion.value- 1 ;
+//     form.nResponses=  []
+    
+//     if(quizz.questions.length-1 ){
+//         fieldBlank()
+//     }
+//     if(start ===0 ){
+//         fieldBlank()
+//         start = 1
+//     }
+//      if(quizz.questions.length == numberQuestion.value-1|| quizz.questions.length== 0){
+//         numberQuestion.value++;
+//         if(start ===0 ){
+//             fieldBlank()
+//             start = 1
+//         }  
+       
+//      }else{
+//         numberQuestion.value++;
+//         if(valueIndex+1 < quizz.questions.length ){
+//             //changement du titre 
+//             changeValueQuestion.value = (valueIndex+1 < quizz.questions.length )?quizz.questions[valueIndex+1].question :""
+//             //affichage des input response
+//             quizz.questions[valueIndex+1].reponse.forEach((res, index) => {
+//                 updateResponses.value[index] = res; 
+//                 form.nResponses.push({ text: '' }); 
+//             });
+//         } 
+//      }
+//     if (!quizz.questions) {
+//         quizz.questions = [];
+//     }
+//         // Si la question n'existe pas, on l'initialise
+//     if (!quizz.questions[valueIndex]) {
+//         quizz.questions.push({
+//             'question': currentQuestion.text,
+//             'reponse' : toRaw(currentQuestion.responses),
+//             'checkbox' : toRaw(currentQuestion.answer)
+//         })
+        
+//     }else{
+//        if( quizz.questions[valueIndex].question != currentQuestion.text && currentQuestion.text != ""){
+//             quizz.questions[valueIndex].question  =  currentQuestion.text
+//         }
+//         //changement du titre 
+//         changeValueQuestion.value = (valueIndex+1 < quizz.questions.length )?quizz.questions[valueIndex+1].question :""
+//         const currentCheckbox = (valueIndex+1 < quizz.questions.length )?valueIndex+1 :quizz.questions.length-1 ;
+//         const currentQuestionData = quizz.questions[currentCheckbox];
+//         //ajout des reponse quand  la question existe deja
+//         if(quizz.questions[valueIndex].reponse.length != form.nResponses.length){
+//             for(let i = 0; i<currentQuestion.responses.length;i++){
+//                 if(currentQuestion.responses[i]!="" && currentQuestion.responses[i]!= undefined){
+//                     quizz.questions[valueIndex].reponse.push(currentQuestion.responses[i])
+//                 }
+//             }
+//         }
+     
+//         //affichage des checkbox selectionné
+//         quizz.questions[currentCheckbox].reponse.forEach((res, index1) => {
+//             boolCheckbox.value[index1] = currentQuestionData.checkbox.includes(res);
+//         });
+//         for(let i =0; i <quizz.questions[valueIndex].reponse.length; i ++){
+//              if(currentQuestion.responses[i]!=undefined ){
+//                 if( quizz.questions[valueIndex].reponse[i]!=  currentQuestion.responses[i] && currentQuestion.responses[i] !=""){
+//                    quizz.questions[valueIndex].reponse[i]   =  currentQuestion.responses[i]
+//                 }
+//             }
+//         }
+//         for(let i =0; i <quizz.questions[valueIndex].checkbox.length; i ++){
+//             if(currentQuestion.answer[i]!=undefined){
+//                 if( quizz.questions[valueIndex].checkbox[i] != currentQuestion.answer[i]  && currentQuestion.answer[i]  !=""){
+//                     quizz.questions[valueIndex].checkbox[i]  =  currentQuestion.answer[i]
+//                 }
+//             }
+//         }
+        
+        
+//     }
+//     checkCheckbox(valueIndex)
+//     //remise a zero du formulaire
+//     currentQuestion = {
+//         text: "",
+//         responses: [""],
+//         answer: []
+//     } 
+    
+// };
 const create = async () => {
+    const isValid = await v$.value.$validate();
+    if (!isValid) {
+        console.log('Form invalid, cannot submit quiz');
+        return;
+    }
     quizz.titre= form.titre 
     quizz.questions.push( {
          'question': currentQuestion.text, 
@@ -248,6 +379,13 @@ const create = async () => {
 </script>
 
 <style lang="scss">
+.is-invalid {
+    border-color: red;
+}
+
+.is-invalid + div {
+    color: red;
+}
 
 
 #containerTitreQuestion{
